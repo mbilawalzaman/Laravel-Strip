@@ -28,4 +28,4 @@ echo "Running migrations..."
 php artisan migrate --force
 
 echo "Starting Nginx + PHP-FPM..."
-/start.sh
+exec /usr/local/bin/start.sh
