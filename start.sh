@@ -4,8 +4,11 @@ set -e
 echo "Starting MySQL..."
 mysqld_safe --datadir=/var/lib/mysql &
 
-# wait for MySQL to be ready
-sleep 10
+# wait for MySQL to accept connections
+echo "Waiting for MySQL to be ready..."
+until mysqladmin ping -u root --silent; do
+  sleep 4
+done
 
 echo "Creating database and user if not exists..."
 mysql -u root -e "CREATE DATABASE IF NOT EXISTS stripe_demo;"
@@ -25,4 +28,4 @@ echo "Running migrations..."
 php artisan migrate --force
 
 echo "Starting Nginx + PHP-FPM..."
-/start.sh   # this runs Nginx+PHP-FPM from base image
+/start.sh
