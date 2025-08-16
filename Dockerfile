@@ -48,9 +48,6 @@ ENV MYSQL_DATABASE=laravel
 ENV MYSQL_USER=laravel
 ENV MYSQL_PASSWORD=laravelpass
 
-# Add a startup script to run both MySQL + nginx + php-fpm
-COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
 
 # Expose ports
 EXPOSE 80 3306
