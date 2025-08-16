@@ -1,30 +1,48 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
-echo "🚀 Starting MySQL..."
-mysqld_safe --datadir='/var/lib/mysql' &
+echo "🚀 Starting container..."
 
-# Wait for MySQL to be ready
-until mysqladmin ping --silent; do
-    echo "⏳ Waiting for MySQL..."
-    sleep 2
+# ✅ Ensure MySQL data directory exists with correct permissions
+if [ ! -d "/var/lib/mysql/mysql" ]; then
+  echo "Initializing MySQL data directory..."
+  mysql_install_db --user=mysql --ldata=/var/lib/mysql > /dev/null
+fi
+
+# ✅ Start MySQL in the background
+echo "Starting MySQL..."
+mysqld_safe --user=mysql --datadir=/var/lib/mysql &
+
+# ✅ Wait for MySQL to be ready
+echo "⏳ Waiting for MySQL to start..."
+until mysqladmin ping >/dev/null 2>&1; do
+  sleep 2
 done
+echo "✅ MySQL is ready!"
 
-echo "✅ MySQL is up. Configuring database..."
+# ✅ Apply database and user privileges
+echo "🔧 Setting up database and user..."
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS stripe_demo; \
+  GRANT ALL PRIVILEGES ON stripe_demo.* TO 'root'@'localhost' IDENTIFIED BY 'Xzc123tp@'; \
+  FLUSH PRIVILEGES;"
 
-# Set root password
-mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'Xzc123tp@';"
+# ✅ Run Composer install
+echo "📦 Installing Composer dependencies..."
+composer install --no-dev --working-dir=/var/www/html --optimize-autoloader
 
-# Create database if not exists
-mysql -u root -pXzc123tp@ -e "CREATE DATABASE IF NOT EXISTS stripe_demo;"
+# ✅ Cache Laravel configuration and routes
+echo "⚡ Caching Laravel config and routes..."
+php artisan config:cache
+php artisan route:cache
 
-# Run Laravel migrations
-php /var/www/html/artisan migrate --force
+# ✅ Run Laravel migrations
+echo "🗄️ Running Laravel migrations..."
+php artisan migrate --force
 
-# Cache Laravel config/routes/views
-php /var/www/html/artisan config:cache
-php /var/www/html/artisan route:cache
-php /var/www/html/artisan view:cache
+# ✅ Start PHP-FPM
+echo "Starting PHP-FPM..."
+php-fpm &
 
-echo "🎉 Laravel setup complete. Starting Nginx + PHP-FPM..."
-exec /usr/local/bin/start.sh-nginx
+# ✅ Start Nginx in foreground
+echo "🌐 Starting Nginx..."
+nginx -g "daemon off;"
