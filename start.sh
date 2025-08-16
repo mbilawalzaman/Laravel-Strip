@@ -1,31 +1,30 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e
 
-echo "Starting MySQL..."
-mysqld_safe --datadir=/var/lib/mysql &
+echo "🚀 Starting MySQL..."
+mysqld_safe --datadir='/var/lib/mysql' &
 
-# wait for MySQL to accept connections
-echo "Waiting for MySQL to be ready..."
-until mysqladmin ping -u root --silent; do
-  sleep 2
+# Wait for MySQL to be ready
+until mysqladmin ping --silent; do
+    echo "⏳ Waiting for MySQL..."
+    sleep 2
 done
 
-echo "Creating database and user if not exists..."
-mysql -u root -e "CREATE DATABASE IF NOT EXISTS stripe_demo;"
+echo "✅ MySQL is up. Configuring database..."
+
+# Set root password
 mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'Xzc123tp@';"
-mysql -u root -pXzc123tp@ -e "GRANT ALL PRIVILEGES ON stripe_demo.* TO 'root'@'localhost'; FLUSH PRIVILEGES;"
 
-echo "Running composer..."
-composer install --no-dev --working-dir=/var/www/html
+# Create database if not exists
+mysql -u root -pXzc123tp@ -e "CREATE DATABASE IF NOT EXISTS stripe_demo;"
 
-echo "Caching config..."
-php artisan config:cache
+# Run Laravel migrations
+php /var/www/html/artisan migrate --force
 
-echo "Caching routes..."
-php artisan route:cache
+# Cache Laravel config/routes/views
+php /var/www/html/artisan config:cache
+php /var/www/html/artisan route:cache
+php /var/www/html/artisan view:cache
 
-echo "Running migrations..."
-php artisan migrate --force
-
-echo "Starting Nginx + PHP-FPM..."
-exec /usr/local/bin/start.sh
+echo "🎉 Laravel setup complete. Starting Nginx + PHP-FPM..."
+exec /usr/local/bin/start.sh-nginx
