@@ -7,7 +7,7 @@ mysqld_safe --datadir=/var/lib/mysql &
 # wait for MySQL to accept connections
 echo "Waiting for MySQL to be ready..."
 until mysqladmin ping -u root --silent; do
-  sleep 4
+  sleep 2
 done
 
 echo "Creating database and user if not exists..."
