@@ -4,8 +4,13 @@ set -e
 echo "Starting MySQL..."
 mysqld_safe --datadir=/var/lib/mysql &
 
-# wait for MySQL
+# wait for MySQL to be ready
 sleep 10
+
+echo "Creating database and user if not exists..."
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS stripe_demo;"
+mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'Xzc123tp@';"
+mysql -u root -pXzc123tp@ -e "GRANT ALL PRIVILEGES ON stripe_demo.* TO 'root'@'localhost'; FLUSH PRIVILEGES;"
 
 echo "Running composer..."
 composer install --no-dev --working-dir=/var/www/html
@@ -20,4 +25,4 @@ echo "Running migrations..."
 php artisan migrate --force
 
 echo "Starting Nginx + PHP-FPM..."
-/start.sh
+/start.sh   # this runs Nginx+PHP-FPM from base image
